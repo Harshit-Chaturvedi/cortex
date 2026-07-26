@@ -1,0 +1,64 @@
+Retrieval-Augmented Generation (RAG) — A Technical Overview
+
+Retrieval-Augmented Generation (RAG) is a technique that enhances large language models (LLMs) by grounding their responses in external knowledge retrieved at query time. Instead of relying solely on the parametric knowledge baked into the model during training, a RAG system fetches relevant documents or passages from a knowledge base and feeds them into the LLM's context window alongside the user's question.
+
+Why RAG Matters
+
+LLMs are prone to hallucination — generating plausible-sounding but factually incorrect answers. This is especially problematic in domains where accuracy matters: legal, medical, financial, and technical documentation. RAG mitigates this by giving the model concrete evidence to cite, rather than forcing it to recall facts from its training data (which may be outdated or incomplete).
+
+Another advantage is cost. Fine-tuning a model on proprietary data is expensive and inflexible. With RAG, you simply update the document store — no retraining required.
+
+The RAG Pipeline
+
+A typical RAG pipeline has three stages:
+
+1. Ingestion: Documents are loaded, split into smaller chunks (typically 200-1000 tokens each), and converted into dense vector embeddings using a model like Sentence-BERT or OpenAI's text-embedding-ada-002. These embeddings are stored in a vector database such as ChromaDB, Pinecone, Weaviate, or FAISS.
+
+2. Retrieval: When a user asks a question, the question is embedded using the same model. The vector database performs a similarity search (usually cosine similarity) to find the top-k most relevant chunks. Common values for k range from 3 to 10, depending on the use case.
+
+3. Generation: The retrieved chunks are inserted into a prompt template along with the user's question. The LLM then generates an answer that is (ideally) grounded in the provided context. Good prompt engineering is critical here — the prompt should instruct the model to only answer based on the given context and to say "I don't know" when the context doesn't contain the answer.
+
+Chunking Strategies
+
+How you split documents into chunks significantly affects retrieval quality. Common approaches include:
+
+- Fixed-size chunking: Split every N characters or tokens. Simple but can break sentences mid-thought.
+- Recursive character splitting: Try to split on paragraph boundaries first, then sentences, then words. This preserves semantic coherence better than fixed-size.
+- Semantic chunking: Use an embedding model to detect topic shifts and split accordingly. More sophisticated but slower.
+
+Overlap between chunks (typically 10-20% of chunk size) ensures that information at chunk boundaries isn't lost. For example, if chunk 1 ends with "The treatment was found to" and chunk 2 begins with "reduce symptoms by 40%", the overlap ensures the full sentence appears in at least one chunk.
+
+Embedding Models
+
+The choice of embedding model matters. Popular options include:
+
+- all-MiniLM-L6-v2: A lightweight, fast model from the sentence-transformers library. Produces 384-dimensional embeddings. Good enough for most use cases and runs on CPU.
+- text-embedding-ada-002 (OpenAI): Higher quality but requires an API call and costs money. 1536-dimensional embeddings.
+- BGE and E5 models: Strong open-source alternatives from BAAI and Microsoft, respectively.
+
+Smaller models like MiniLM are fine for prototyping and even production use with moderate-scale document collections (up to a few hundred thousand chunks). For larger collections or highly specialized domains, higher-capacity models may improve retrieval accuracy.
+
+Vector Databases
+
+ChromaDB is popular for local development — it's embedded (no server needed), persists to disk, and has a simple Python API. Pinecone and Weaviate are managed services better suited for production at scale. FAISS (from Meta) is a raw similarity search library without the database layer — fast but you manage persistence yourself.
+
+Evaluation
+
+Evaluating a RAG system is tricky because you're measuring two things: retrieval quality and generation quality. Common metrics include:
+
+- Faithfulness: Does the generated answer actually follow from the retrieved context? (i.e., no hallucination)
+- Answer Relevancy: Is the answer relevant to the question asked?
+- Context Precision: Are the retrieved chunks actually relevant to the question, or is there a lot of noise?
+- Context Recall: Did the retrieval step find all the relevant information in the corpus?
+
+Tools like Ragas (Retrieval Augmented Generation Assessment) automate these evaluations using LLM-as-a-judge approaches.
+
+Limitations and Pitfalls
+
+RAG is not a silver bullet. Common failure modes include:
+
+- Garbage in, garbage out: If the source documents are poorly written, contradictory, or incomplete, the system inherits those problems.
+- Chunk boundary issues: Important information split across chunks may not be retrieved together.
+- Embedding model mismatch: If the embedding model wasn't trained on text similar to your documents, retrieval quality suffers.
+- Context window limits: If retrieved chunks are too long or too numerous, they may exceed the LLM's context window.
+- Over-reliance on similarity: Semantic similarity isn't the same as relevance. A chunk about "apple pie recipes" might be semantically similar to a question about "Apple Inc. stock price."

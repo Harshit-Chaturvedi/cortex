@@ -1,0 +1,14 @@
+services:
+  cortex:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # persist the vector store across container restarts
+      - ./chroma_db:/app/chroma_db
+      # mount your docs directory so you can add files without rebuilding
+      - ./data/sample_docs:/app/data/sample_docs
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1

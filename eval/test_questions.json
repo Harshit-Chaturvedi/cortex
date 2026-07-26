@@ -1,0 +1,74 @@
+[
+  {
+    "question": "What is Retrieval-Augmented Generation (RAG)?",
+    "ground_truth": "RAG is a technique that enhances large language models by grounding their responses in external knowledge retrieved at query time, rather than relying solely on parametric knowledge from training."
+  },
+  {
+    "question": "Why is RAG useful compared to fine-tuning?",
+    "ground_truth": "RAG is cheaper and more flexible than fine-tuning because you simply update the document store instead of retraining the model."
+  },
+  {
+    "question": "What are the three stages of a typical RAG pipeline?",
+    "ground_truth": "The three stages are ingestion (loading and embedding documents), retrieval (finding similar chunks via vector search), and generation (using an LLM to produce an answer from retrieved context)."
+  },
+  {
+    "question": "What embedding model does the document mention as lightweight and free?",
+    "ground_truth": "all-MiniLM-L6-v2 from the sentence-transformers library, which produces 384-dimensional embeddings and runs on CPU."
+  },
+  {
+    "question": "What is the purpose of chunk overlap?",
+    "ground_truth": "Overlap ensures that information at chunk boundaries isn't lost. If a key piece of info straddles two chunks, the overlap means the full sentence appears in at least one chunk."
+  },
+  {
+    "question": "What is the difference between RecursiveCharacterTextSplitter and fixed-size chunking?",
+    "ground_truth": "RecursiveCharacterTextSplitter tries to split on natural boundaries like paragraphs and sentences before falling back to character splits, preserving semantic coherence better than fixed-size chunking which can break sentences mid-thought."
+  },
+  {
+    "question": "What are the main metrics used to evaluate a RAG system?",
+    "ground_truth": "Faithfulness (no hallucination), answer relevancy (answer matches the question), context precision (retrieved chunks are relevant), and context recall (retrieval found all relevant info)."
+  },
+  {
+    "question": "What is faithfulness in RAG evaluation?",
+    "ground_truth": "Faithfulness measures whether the generated answer actually follows from the retrieved context, i.e., the model didn't hallucinate information."
+  },
+  {
+    "question": "What is ChromaDB and why is it popular for development?",
+    "ground_truth": "ChromaDB is a vector database that's popular for local development because it's embedded (no server needed), persists to disk, and has a simple Python API."
+  },
+  {
+    "question": "What vector database alternatives does the document mention?",
+    "ground_truth": "Pinecone and Weaviate (managed services for production at scale), and FAISS from Meta (a raw similarity search library without the database layer)."
+  },
+  {
+    "question": "What is semantic chunking?",
+    "ground_truth": "Semantic chunking uses an embedding model to detect topic shifts and split documents accordingly. It's more sophisticated than character or recursive splitting but slower."
+  },
+  {
+    "question": "What is the typical range for k in top-k retrieval?",
+    "ground_truth": "Common values for k range from 3 to 10, depending on the use case."
+  },
+  {
+    "question": "What does the document say about the problem of hallucination in LLMs?",
+    "ground_truth": "LLMs are prone to hallucination — generating plausible-sounding but factually incorrect answers. This is especially problematic in domains where accuracy matters like legal, medical, financial, and technical documentation."
+  },
+  {
+    "question": "What is the difference between OpenAI's embedding model and MiniLM?",
+    "ground_truth": "OpenAI's text-embedding-ada-002 produces higher quality 1536-dimensional embeddings but requires an API call and costs money. MiniLM produces 384-dimensional embeddings, is free, and runs locally."
+  },
+  {
+    "question": "What are the failure modes of RAG mentioned in the document?",
+    "ground_truth": "Garbage in/garbage out from bad source docs, chunk boundary issues splitting important info, embedding model mismatch with document domain, context window limits, and over-reliance on similarity where semantic similarity doesn't equal relevance."
+  },
+  {
+    "question": "What tool does the document recommend for automated RAG evaluation?",
+    "ground_truth": "Ragas (Retrieval Augmented Generation Assessment), which automates evaluations using LLM-as-a-judge approaches."
+  },
+  {
+    "question": "What is the embedding dimension of all-MiniLM-L6-v2?",
+    "ground_truth": "384 dimensions."
+  },
+  {
+    "question": "What is the role of prompt engineering in the generation stage of RAG?",
+    "ground_truth": "Good prompt engineering is critical — the prompt should instruct the model to only answer based on the given context and to say 'I don't know' when the context doesn't contain the answer."
+  }
+]
