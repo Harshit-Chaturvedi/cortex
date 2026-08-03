@@ -1,326 +1,272 @@
-// ===== DOM Elements =====
-const chatContainer = document.getElementById("chatContainer");
+// ===== Elements =====
+const feed = document.getElementById("feed");
 const chatForm = document.getElementById("chatForm");
 const questionInput = document.getElementById("questionInput");
 const sendBtn = document.getElementById("sendBtn");
-const welcome = document.getElementById("welcome");
+const hero = document.getElementById("hero");
 const uploadZone = document.getElementById("uploadZone");
 const fileInput = document.getElementById("fileInput");
 const uploadStatus = document.getElementById("uploadStatus");
 const serverStatus = document.getElementById("serverStatus");
+const statusDot = document.getElementById("statusDot");
 const apiKeyInput = document.getElementById("apiKeyInput");
 const sidebar = document.getElementById("sidebar");
 const sidebarOpen = document.getElementById("sidebarOpen");
 const sidebarClose = document.getElementById("sidebarClose");
 
-// ===== State =====
-let isWaiting = false;
+let busy = false;
 
-// ===== API Key =====
-function getApiKey() {
+function apiKey() {
     return apiKeyInput.value.trim() || "dev-key-change-me";
 }
 
-// ===== Health Check =====
+// ===== Health =====
 async function checkHealth() {
     try {
-        const res = await fetch("/health");
-        if (res.ok) {
-            serverStatus.textContent = "Online";
-            serverStatus.className = "status-badge online";
-        } else {
-            throw new Error();
-        }
+        const r = await fetch("/health");
+        if (r.ok) {
+            serverStatus.textContent = "Connected";
+            statusDot.className = "stat-dot online";
+        } else { throw 0; }
     } catch {
         serverStatus.textContent = "Offline";
-        serverStatus.className = "status-badge offline";
+        statusDot.className = "stat-dot offline";
     }
 }
 
 // ===== Chat =====
-function hideWelcome() {
-    if (welcome) {
-        welcome.style.display = "none";
-    }
+function hideHero() {
+    if (hero) hero.style.display = "none";
 }
 
-function addUserMessage(text) {
-    hideWelcome();
-    const div = document.createElement("div");
-    div.className = "message user";
-    div.innerHTML = `
-        <div class="msg-header">
-            <div class="msg-avatar">Y</div>
-            <span class="msg-name">You</span>
+function userBubble(text) {
+    hideHero();
+    const el = document.createElement("div");
+    el.className = "msg user";
+    el.innerHTML = `
+        <div class="msg-top">
+            <span class="msg-dot"></span>
+            <span class="msg-who">You</span>
         </div>
-        <div class="msg-bubble">${escapeHtml(text)}</div>
+        <div class="msg-body">${esc(text)}</div>
     `;
-    chatContainer.appendChild(div);
-    scrollToBottom();
+    feed.appendChild(el);
+    scroll();
 }
 
-function addLoadingMessage() {
-    const div = document.createElement("div");
-    div.className = "message bot";
-    div.id = "loadingMsg";
-    div.innerHTML = `
-        <div class="msg-header">
-            <div class="msg-avatar">C</div>
-            <span class="msg-name">Cortex</span>
+function loadingBubble() {
+    const el = document.createElement("div");
+    el.className = "msg bot";
+    el.id = "typing";
+    el.innerHTML = `
+        <div class="msg-top">
+            <span class="msg-dot"></span>
+            <span class="msg-who">Cortex</span>
         </div>
-        <div class="msg-bubble">
-            <div class="loading-dots">
-                <span></span><span></span><span></span>
-            </div>
+        <div class="msg-body">
+            <div class="loader"><span></span><span></span><span></span></div>
         </div>
     `;
-    chatContainer.appendChild(div);
-    scrollToBottom();
+    feed.appendChild(el);
+    scroll();
 }
 
-function removeLoadingMessage() {
-    const el = document.getElementById("loadingMsg");
+function removeLoading() {
+    const el = document.getElementById("typing");
     if (el) el.remove();
 }
 
-function addBotMessage(data) {
-    removeLoadingMessage();
-
-    const answer = data.answer || "No answer received.";
+function botBubble(data) {
+    removeLoading();
+    const answer = data.answer || "No answer.";
     const sources = data.sources || [];
-    const provider = data.provider || "unknown";
-    const latency = data.latency_ms || 0;
+    const provider = data.provider || "?";
+    const ms = data.latency_ms || 0;
 
-    let sourcesHtml = "";
-    if (sources.length > 0) {
-        const sourceItems = sources.map((s, i) => {
-            const file = s.metadata?.source || "unknown";
-            const score = s.score !== undefined ? (s.score * 100).toFixed(0) + "% match" : "";
-            const content = escapeHtml(s.content || "").substring(0, 200);
-            return `
-                <div class="source-item">
-                    <div class="source-header">
-                        <span class="source-file">📄 ${escapeHtml(file)}</span>
-                        <span class="source-score">${score}</span>
-                    </div>
-                    <div class="source-content">${content}...</div>
+    let srcHtml = "";
+    if (sources.length) {
+        const id = "src-" + Date.now();
+        const items = sources.map(s => {
+            const file = s.metadata?.source || "?";
+            const score = s.score !== undefined ? (s.score * 100).toFixed(0) + "%" : "";
+            return `<div class="src-item">
+                <div class="src-head">
+                    <span class="src-file">${esc(file)}</span>
+                    <span class="src-score">${score}</span>
                 </div>
-            `;
+                <div class="src-text">${esc((s.content || "").slice(0, 180))}…</div>
+            </div>`;
         }).join("");
 
-        const sourceId = "sources-" + Date.now();
-        sourcesHtml = `
-            <div class="sources">
-                <button class="sources-toggle" onclick="toggleSources('${sourceId}', this)">
-                    📎 ${sources.length} source${sources.length > 1 ? "s" : ""} used
-                </button>
-                <div class="sources-list" id="${sourceId}">
-                    ${sourceItems}
-                </div>
-            </div>
-        `;
+        srcHtml = `<div class="src-wrap">
+            <button class="src-toggle" onclick="toggleSrc('${id}', this)">
+                ▸ ${sources.length} source${sources.length > 1 ? "s" : ""}
+            </button>
+            <div class="src-list" id="${id}">${items}</div>
+        </div>`;
     }
 
-    const div = document.createElement("div");
-    div.className = "message bot";
-    div.innerHTML = `
-        <div class="msg-header">
-            <div class="msg-avatar">C</div>
-            <span class="msg-name">Cortex</span>
-            <div class="msg-meta">
-                <span class="provider-badge">${escapeHtml(provider)}</span>
-                <span>${(latency / 1000).toFixed(1)}s</span>
+    const el = document.createElement("div");
+    el.className = "msg bot";
+    el.innerHTML = `
+        <div class="msg-top">
+            <span class="msg-dot"></span>
+            <span class="msg-who">Cortex</span>
+            <div class="msg-info">
+                <span class="msg-provider">${esc(provider)}</span>
+                <span>${(ms / 1000).toFixed(1)}s</span>
             </div>
         </div>
-        <div class="msg-bubble">${formatAnswer(answer)}</div>
-        ${sourcesHtml}
+        <div class="msg-body">${fmt(answer)}</div>
+        ${srcHtml}
     `;
-    chatContainer.appendChild(div);
-    scrollToBottom();
+    feed.appendChild(el);
+    scroll();
 }
 
-function addErrorMessage(error) {
-    removeLoadingMessage();
-    const div = document.createElement("div");
-    div.className = "message bot";
-    div.innerHTML = `
-        <div class="msg-header">
-            <div class="msg-avatar">C</div>
-            <span class="msg-name">Cortex</span>
+function errorBubble(msg) {
+    removeLoading();
+    const el = document.createElement("div");
+    el.className = "msg bot";
+    el.innerHTML = `
+        <div class="msg-top">
+            <span class="msg-dot"></span>
+            <span class="msg-who">Cortex</span>
         </div>
-        <div class="msg-bubble" style="border-color: var(--error); color: var(--error);">
-            ⚠️ ${escapeHtml(error)}
+        <div class="msg-body" style="border-color:var(--red);color:var(--red);">
+            ${esc(msg)}
         </div>
     `;
-    chatContainer.appendChild(div);
-    scrollToBottom();
+    feed.appendChild(el);
+    scroll();
 }
 
-async function sendQuestion(question) {
-    if (isWaiting || !question.trim()) return;
-
-    isWaiting = true;
+async function ask(q) {
+    if (busy || !q.trim()) return;
+    busy = true;
     sendBtn.disabled = true;
-    addUserMessage(question);
-    addLoadingMessage();
+    userBubble(q);
+    loadingBubble();
 
     try {
-        const res = await fetch("/ask", {
+        const r = await fetch("/ask", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-API-Key": getApiKey(),
-            },
-            body: JSON.stringify({ question: question.trim() }),
+            headers: { "Content-Type": "application/json", "X-API-Key": apiKey() },
+            body: JSON.stringify({ question: q.trim() }),
         });
-
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.detail || `Server returned ${res.status}`);
+        if (!r.ok) {
+            const e = await r.json().catch(() => ({}));
+            throw new Error(e.detail || `Error ${r.status}`);
         }
-
-        const data = await res.json();
-        addBotMessage(data);
-    } catch (err) {
-        addErrorMessage(err.message || "Something went wrong. Check if the server is running.");
+        botBubble(await r.json());
+    } catch (e) {
+        errorBubble(e.message || "Something went wrong.");
     } finally {
-        isWaiting = false;
+        busy = false;
         sendBtn.disabled = false;
         questionInput.focus();
     }
 }
 
-// ===== File Upload =====
-async function uploadFile(file) {
-    const formData = new FormData();
-    formData.append("file", file);
+// ===== Upload =====
+async function upload(file) {
+    const fd = new FormData();
+    fd.append("file", file);
 
-    const msgDiv = document.createElement("div");
-    msgDiv.className = "upload-msg";
-    msgDiv.textContent = `Uploading ${file.name}...`;
-    uploadStatus.appendChild(msgDiv);
+    const m = document.createElement("div");
+    m.className = "upload-msg";
+    m.textContent = `Uploading ${file.name}…`;
+    uploadStatus.appendChild(m);
 
     try {
-        const res = await fetch("/upload", {
+        const r = await fetch("/upload", {
             method: "POST",
-            headers: { "X-API-Key": getApiKey() },
-            body: formData,
+            headers: { "X-API-Key": apiKey() },
+            body: fd,
         });
-
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.detail || `Upload failed: ${res.status}`);
+        if (!r.ok) {
+            const e = await r.json().catch(() => ({}));
+            throw new Error(e.detail || `Failed: ${r.status}`);
         }
-
-        const data = await res.json();
-        msgDiv.className = "upload-msg success";
-        msgDiv.textContent = `✓ ${file.name} — ${data.chunks_added || "?"} chunks added`;
-    } catch (err) {
-        msgDiv.className = "upload-msg error";
-        msgDiv.textContent = `✗ ${file.name} — ${err.message}`;
+        const d = await r.json();
+        m.className = "upload-msg success";
+        m.textContent = `✓ ${file.name} ingested`;
+    } catch (e) {
+        m.className = "upload-msg error";
+        m.textContent = `✗ ${file.name} — ${e.message}`;
     }
-
-    // auto-clear after 8 seconds
-    setTimeout(() => msgDiv.remove(), 8000);
+    setTimeout(() => m.remove(), 6000);
 }
 
 // ===== Helpers =====
-function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
+function esc(s) {
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
 }
 
-function formatAnswer(text) {
-    // basic markdown-ish formatting
-    return escapeHtml(text)
+function fmt(t) {
+    return esc(t)
         .replace(/\n- /g, "\n• ")
         .replace(/\n/g, "<br>")
         .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        .replace(/`(.*?)`/g, '<code style="background:var(--bg-primary);padding:2px 6px;border-radius:4px;font-family:var(--font-mono);font-size:12px;">$1</code>');
+        .replace(/`(.*?)`/g, '<code style="background:var(--bg-0);padding:1px 5px;border-radius:4px;font-family:var(--mono);font-size:12px;">$1</code>');
 }
 
-function scrollToBottom() {
-    requestAnimationFrame(() => {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-    });
+function scroll() {
+    requestAnimationFrame(() => feed.scrollTop = feed.scrollHeight);
 }
 
-function toggleSources(id, btn) {
-    const list = document.getElementById(id);
-    if (list) {
-        list.classList.toggle("open");
-        if (list.classList.contains("open")) {
-            btn.innerHTML = "📎 Hide sources";
-        } else {
-            btn.innerHTML = btn.dataset.original || "📎 Show sources";
-        }
-    }
+function toggleSrc(id, btn) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle("open");
+    btn.textContent = el.classList.contains("open")
+        ? `▾ Hide sources`
+        : `▸ ${el.children.length} source${el.children.length > 1 ? "s" : ""}`;
 }
 
-function askSuggestion(btn) {
-    const text = btn.textContent.trim();
-    questionInput.value = text;
-    sendQuestion(text);
+function askChip(btn) {
+    const t = btn.textContent.trim();
+    questionInput.value = t;
+    ask(t);
     questionInput.value = "";
-
-    // close sidebar on mobile
     sidebar.classList.remove("open");
 }
 
-// ===== Textarea auto-resize =====
+// ===== Events =====
 questionInput.addEventListener("input", () => {
     questionInput.style.height = "auto";
     questionInput.style.height = Math.min(questionInput.scrollHeight, 120) + "px";
 });
 
-// ===== Form submit =====
-chatForm.addEventListener("submit", (e) => {
+chatForm.addEventListener("submit", e => {
     e.preventDefault();
     const q = questionInput.value.trim();
-    if (q) {
-        sendQuestion(q);
-        questionInput.value = "";
-        questionInput.style.height = "auto";
-    }
+    if (q) { ask(q); questionInput.value = ""; questionInput.style.height = "auto"; }
 });
 
-// Enter to send (Shift+Enter for newline)
-questionInput.addEventListener("keydown", (e) => {
+questionInput.addEventListener("keydown", e => {
     if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         chatForm.dispatchEvent(new Event("submit"));
     }
 });
 
-// ===== Upload events =====
 uploadZone.addEventListener("click", () => fileInput.click());
-
-fileInput.addEventListener("change", (e) => {
-    for (const file of e.target.files) {
-        uploadFile(file);
-    }
+fileInput.addEventListener("change", e => {
+    for (const f of e.target.files) upload(f);
     fileInput.value = "";
 });
 
-uploadZone.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    uploadZone.classList.add("drag-over");
-});
-
-uploadZone.addEventListener("dragleave", () => {
-    uploadZone.classList.remove("drag-over");
-});
-
-uploadZone.addEventListener("drop", (e) => {
+uploadZone.addEventListener("dragover", e => { e.preventDefault(); uploadZone.classList.add("drag-over"); });
+uploadZone.addEventListener("dragleave", () => uploadZone.classList.remove("drag-over"));
+uploadZone.addEventListener("drop", e => {
     e.preventDefault();
     uploadZone.classList.remove("drag-over");
-    for (const file of e.dataTransfer.files) {
-        uploadFile(file);
-    }
+    for (const f of e.dataTransfer.files) upload(f);
 });
 
-// ===== Sidebar mobile toggle =====
 sidebarOpen.addEventListener("click", () => sidebar.classList.add("open"));
 sidebarClose.addEventListener("click", () => sidebar.classList.remove("open"));
 
