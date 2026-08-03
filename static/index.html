@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cortex — RAG Q&A Assistant</title>
+    <meta name="description" content="Upload documents and ask questions. Get grounded answers from your own files.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">C</div>
+                    <span class="logo-text">Cortex</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebarClose" aria-label="Close sidebar">✕</button>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="section-title">Upload Documents</h3>
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">📄</div>
+                    <p class="upload-text">Drop PDF or TXT files here</p>
+                    <p class="upload-subtext">or click to browse</p>
+                    <input type="file" id="fileInput" accept=".pdf,.txt" multiple hidden>
+                </div>
+                <div class="upload-status" id="uploadStatus"></div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="section-title">System Status</h3>
+                <div class="status-card" id="statusCard">
+                    <div class="status-row">
+                        <span class="status-label">Server</span>
+                        <span class="status-badge" id="serverStatus">Checking...</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">API Key</span>
+                        <span class="status-value">
+                            <input type="password" id="apiKeyInput" class="api-key-input" 
+                                   value="dev-key-change-me" placeholder="Enter API key">
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="section-title">Try these questions</h3>
+                <div class="suggestions">
+                    <button class="suggestion-btn" onclick="askSuggestion(this)">What is RAG?</button>
+                    <button class="suggestion-btn" onclick="askSuggestion(this)">What are common failure modes of RAG?</button>
+                    <button class="suggestion-btn" onclick="askSuggestion(this)">What embedding model is used?</button>
+                    <button class="suggestion-btn" onclick="askSuggestion(this)">What is chunk overlap?</button>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <a href="/docs" target="_blank" class="footer-link">API Docs ↗</a>
+                <a href="https://github.com/Harshit-Chaturvedi/cortex" target="_blank" class="footer-link">GitHub ↗</a>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="main">
+            <header class="main-header">
+                <button class="sidebar-toggle mobile-only" id="sidebarOpen" aria-label="Open sidebar">☰</button>
+                <div class="header-info">
+                    <h1>Cortex</h1>
+                    <span class="header-subtitle">RAG-powered Q&A — answers grounded in your documents</span>
+                </div>
+            </header>
+
+            <div class="chat-container" id="chatContainer">
+                <!-- Welcome message -->
+                <div class="welcome" id="welcome">
+                    <div class="welcome-icon">🧠</div>
+                    <h2>Welcome to Cortex</h2>
+                    <p>Upload your documents and ask questions. I'll find answers directly from your files — no hallucination.</p>
+                    <div class="welcome-features">
+                        <div class="feature">
+                            <span class="feature-icon">📄</span>
+                            <span>Upload PDFs & text files</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">🔍</span>
+                            <span>Semantic search across chunks</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">⚡</span>
+                            <span>Multi-provider LLM fallback</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">📌</span>
+                            <span>Source citations with every answer</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <form id="chatForm" class="chat-form">
+                    <div class="input-wrapper">
+                        <textarea id="questionInput" class="chat-input" 
+                                  placeholder="Ask a question about your documents..." 
+                                  rows="1" autofocus></textarea>
+                        <button type="submit" class="send-btn" id="sendBtn" aria-label="Send">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

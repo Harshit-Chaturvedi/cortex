@@ -8,8 +8,11 @@ import time
 import shutil
 import logging
 from datetime import datetime
+from pathlib import Path
 
 from fastapi import FastAPI, UploadFile, File, Header, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from app.config import API_KEY, DOCS_DIR
@@ -30,6 +33,11 @@ app = FastAPI(
     description="RAG-based Q&A over your documents",
     version="0.1.0",
 )
+
+# serve frontend static files (css, js)
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 # --- auth check ---
@@ -129,3 +137,12 @@ async def ask_question(
 @app.get("/health")
 async def health():
     return {"status": "ok", "time": datetime.now().isoformat()}
+
+
+@app.get("/", include_in_schema=False)
+async def serve_frontend():
+    """Serve the chat frontend at the root URL."""
+    index_file = STATIC_DIR / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file))
+    return {"message": "Cortex API is running. Visit /docs for API documentation."}
