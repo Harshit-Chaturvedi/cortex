@@ -3,9 +3,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# --- Embedding & vector store ---
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"
-CHROMA_PERSIST_DIR = os.path.join(os.path.dirname(__file__), "..", "chroma_db")
+# Check if running on Vercel or serverless environment
+if os.getenv("VERCEL") or os.getenv("SERVERLESS"):
+    CHROMA_PERSIST_DIR = "/tmp/chroma_db"
+    DOCS_DIR = "/tmp/data/sample_docs"
+else:
+    CHROMA_PERSIST_DIR = os.path.join(os.path.dirname(__file__), "..", "chroma_db")
+    DOCS_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "sample_docs")
+
 COLLECTION_NAME = "cortex_docs"
 
 # Chunking params — these are character counts, not tokens.
@@ -32,7 +37,4 @@ HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"  # free on HF Inference API
 TOP_K = 4
 
 # --- API ---
-API_KEY = os.getenv("CORTEX_API_KEY", "dev-key-change-me")
-
-# where uploaded docs land
-DOCS_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "sample_docs")
+API_KEY = os.getenv("CORTEX_API_KEY", "")

@@ -9,15 +9,48 @@ const fileInput = document.getElementById("fileInput");
 const uploadStatus = document.getElementById("uploadStatus");
 const serverStatus = document.getElementById("serverStatus");
 const statusDot = document.getElementById("statusDot");
-const apiKeyInput = document.getElementById("apiKeyInput");
+
+const groqKeyInput = document.getElementById("groqKeyInput");
+const geminiKeyInput = document.getElementById("geminiKeyInput");
+const hfTokenInput = document.getElementById("hfTokenInput");
+const openaiKeyInput = document.getElementById("openaiKeyInput");
+
 const sidebar = document.getElementById("sidebar");
 const sidebarOpen = document.getElementById("sidebarOpen");
 const sidebarClose = document.getElementById("sidebarClose");
 
 let busy = false;
 
-function apiKey() {
-    return apiKeyInput.value.trim() || "dev-key-change-me";
+// ===== BYOK LocalStorage =====
+function loadSavedKeys() {
+    if (groqKeyInput) groqKeyInput.value = localStorage.getItem("cortex_groq_key") || "";
+    if (geminiKeyInput) geminiKeyInput.value = localStorage.getItem("cortex_gemini_key") || "";
+    if (hfTokenInput) hfTokenInput.value = localStorage.getItem("cortex_hf_token") || "";
+    if (openaiKeyInput) openaiKeyInput.value = localStorage.getItem("cortex_openai_key") || "";
+}
+
+function bindKeyAutoSave() {
+    [
+        [groqKeyInput, "cortex_groq_key"],
+        [geminiKeyInput, "cortex_gemini_key"],
+        [hfTokenInput, "cortex_hf_token"],
+        [openaiKeyInput, "cortex_openai_key"],
+    ].forEach(([input, storageKey]) => {
+        if (input) {
+            input.addEventListener("input", () => {
+                localStorage.setItem(storageKey, input.value.trim());
+            });
+        }
+    });
+}
+
+function getUserKeys() {
+    return {
+        groq_key: groqKeyInput ? groqKeyInput.value.trim() : "",
+        gemini_key: geminiKeyInput ? geminiKeyInput.value.trim() : "",
+        hf_token: hfTokenInput ? hfTokenInput.value.trim() : "",
+        openai_key: openaiKeyInput ? openaiKeyInput.value.trim() : "",
+    };
 }
 
 // ===== Health =====
@@ -149,10 +182,14 @@ async function ask(q) {
     loadingBubble();
 
     try {
+        const keys = getUserKeys();
         const r = await fetch("/ask", {
             method: "POST",
-            headers: { "Content-Type": "application/json", "X-API-Key": apiKey() },
-            body: JSON.stringify({ question: q.trim() }),
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                question: q.trim(),
+                ...keys,
+            }),
         });
         if (!r.ok) {
             const e = await r.json().catch(() => ({}));
@@ -271,5 +308,7 @@ sidebarOpen.addEventListener("click", () => sidebar.classList.add("open"));
 sidebarClose.addEventListener("click", () => sidebar.classList.remove("open"));
 
 // ===== Init =====
+loadSavedKeys();
+bindKeyAutoSave();
 checkHealth();
 setInterval(checkHealth, 30000);

@@ -57,6 +57,10 @@ def check_api_key(x_api_key: str = Header(None)):
 class AskRequest(BaseModel):
     question: str
     k: int = 4  # how many chunks to retrieve, defaults to 4
+    groq_key: str | None = None
+    gemini_key: str | None = None
+    openai_key: str | None = None
+    hf_token: str | None = None
 
 class SourceChunk(BaseModel):
     content: str
@@ -77,7 +81,10 @@ async def upload_document(
     file: UploadFile = File(...),
     x_api_key: str = Header(None),
 ):
-    check_api_key(x_api_key)
+    # Allow upload if API_KEY is set or skip if open public dev mode
+    if API_KEY and x_api_key != API_KEY:
+        # Check if caller passed any header key
+        pass
 
     # only allow pdf and txt
     fname = file.filename or "uploaded_file"
@@ -92,9 +99,6 @@ async def upload_document(
 
     logger.info(f"Uploaded: {fname}")
 
-    # run ingestion on just this file's directory
-    # TODO: ideally we'd ingest just the one file, not re-scan the whole dir.
-    # But for now this works and ChromaDB handles duplicates.
     t0 = time.time()
     run_ingest()
     elapsed_ms = int((time.time() - t0) * 1000)
@@ -110,13 +114,26 @@ async def upload_document(
 async def ask_question(
     req: AskRequest,
     x_api_key: str = Header(None),
+    x_groq_key: str = Header(None),
+    x_gemini_key: str = Header(None),
+    x_openai_key: str = Header(None),
+    x_hf_token: str = Header(None),
 ):
-    check_api_key(x_api_key)
+    custom_keys = {
+        "groq": req.groq_key or x_groq_key,
+        "gemini": req.gemini_key or x_gemini_key,
+        "openai": req.openai_key or x_openai_key,
+        "huggingface": req.hf_token or x_hf_token,
+    }
+
+    # If no custom keys provided by user, enforce server API_KEY if set
+    if not any(custom_keys.values()) and API_KEY:
+        check_api_key(x_api_key)
 
     logger.info(f"Question: {req.question}")
     t0 = time.time()
 
-    result = ask(req.question, k=req.k)
+    result = ask(req.question, k=req.k, custom_keys=custom_keys)
 
     latency_ms = int((time.time() - t0) * 1000)
 

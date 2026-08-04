@@ -37,34 +37,39 @@ Context:
 USER_PROMPT = "{question}"
 
 
-def _get_available_llms():
+def _get_available_llms(custom_keys: dict = None):
     """
     Build a list of (name, llm_instance) for every provider that has a key set.
+    Supports user-provided keys passed per request (BYOK) with fallback to env vars.
     Order: Groq (free, fast) → Gemini (free) → HuggingFace (free) → OpenAI (paid).
     """
+    custom_keys = custom_keys or {}
     llms = []
 
-    if GROQ_API_KEY:
+    groq_key = custom_keys.get("groq") or GROQ_API_KEY
+    if groq_key:
         from langchain_groq import ChatGroq
         llms.append(("groq", ChatGroq(
             model=GROQ_MODEL,
-            api_key=GROQ_API_KEY,
+            api_key=groq_key,
             temperature=0,
         )))
 
-    if GOOGLE_API_KEY:
+    gemini_key = custom_keys.get("gemini") or GOOGLE_API_KEY
+    if gemini_key:
         from langchain_google_genai import ChatGoogleGenerativeAI
         llms.append(("gemini", ChatGoogleGenerativeAI(
             model=GEMINI_MODEL,
-            google_api_key=GOOGLE_API_KEY,
+            google_api_key=gemini_key,
             temperature=0,
         )))
 
-    if HF_TOKEN:
+    hf_token = custom_keys.get("huggingface") or HF_TOKEN
+    if hf_token:
         from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
         hf_endpoint = HuggingFaceEndpoint(
             repo_id=HF_MODEL,
-            huggingfacehub_api_token=HF_TOKEN,
+            huggingfacehub_api_token=hf_token,
             temperature=0.01,  # HF doesn't like exact 0
             max_new_tokens=512,
         )
@@ -72,11 +77,12 @@ def _get_available_llms():
             llm=hf_endpoint,
         )))
 
-    if OPENAI_API_KEY:
+    openai_key = custom_keys.get("openai") or OPENAI_API_KEY
+    if openai_key:
         from langchain_openai import ChatOpenAI
         llms.append(("openai", ChatOpenAI(
             model=OPENAI_MODEL,
-            api_key=OPENAI_API_KEY,
+            api_key=openai_key,
             temperature=0,
         )))
 
@@ -92,7 +98,7 @@ def build_context_block(chunks: list[dict]) -> str:
     return "\n\n---\n\n".join(parts)
 
 
-def ask(question: str, k: int = 4) -> dict:
+def ask(question: str, k: int = 4, custom_keys: dict = None) -> dict:
     """
     End-to-end: retrieve chunks, build prompt, call LLM, return answer + sources.
     
@@ -118,11 +124,11 @@ def ask(question: str, k: int = 4) -> dict:
     ])
 
     # 3. try each LLM provider until one works
-    available = _get_available_llms()
+    available = _get_available_llms(custom_keys=custom_keys)
 
     if not available:
         return {
-            "answer": "No LLM provider configured. Add at least one API key (GOOGLE_API_KEY, GROQ_API_KEY, or OPENAI_API_KEY) to your .env file.",
+            "answer": "No LLM API keys provided. Please enter at least one API key (Groq, Gemini, HuggingFace, or OpenAI) in the settings.",
             "sources": chunks,
             "provider": None,
         }

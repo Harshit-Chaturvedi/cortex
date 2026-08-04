@@ -52,17 +52,48 @@
                     <div id="uploadStatus"></div>
                 </div>
 
-                <!-- Status -->
+                <!-- API Keys (BYOK) -->
                 <div class="panel">
-                    <div class="panel-label">Connection</div>
+                    <div class="panel-label">Your API Keys (BYOK)</div>
                     <div class="stat-row">
                         <span class="stat-dot" id="statusDot"></span>
                         <span class="stat-text" id="serverStatus">Checking...</span>
                     </div>
-                    <div class="key-field">
-                        <label class="key-label" for="apiKeyInput">API Key</label>
-                        <input type="password" id="apiKeyInput" class="key-input" value="dev-key-change-me">
+                    
+                    <div class="keys-list">
+                        <div class="key-field">
+                            <div class="key-header">
+                                <label class="key-label" for="groqKeyInput">Groq Key</label>
+                                <a href="https://console.groq.com/keys" target="_blank" class="key-get">Get Free ↗</a>
+                            </div>
+                            <input type="password" id="groqKeyInput" class="key-input" placeholder="gsk_...">
+                        </div>
+
+                        <div class="key-field">
+                            <div class="key-header">
+                                <label class="key-label" for="geminiKeyInput">Gemini Key</label>
+                                <a href="https://aistudio.google.com/apikey" target="_blank" class="key-get">Get Free ↗</a>
+                            </div>
+                            <input type="password" id="geminiKeyInput" class="key-input" placeholder="AIzaSy...">
+                        </div>
+
+                        <div class="key-field">
+                            <div class="key-header">
+                                <label class="key-label" for="hfTokenInput">HuggingFace</label>
+                                <a href="https://huggingface.co/settings/tokens" target="_blank" class="key-get">Get Free ↗</a>
+                            </div>
+                            <input type="password" id="hfTokenInput" class="key-input" placeholder="hf_...">
+                        </div>
+
+                        <div class="key-field">
+                            <div class="key-header">
+                                <label class="key-label" for="openaiKeyInput">OpenAI Key</label>
+                                <a href="https://platform.openai.com/api-keys" target="_blank" class="key-get">Get ↗</a>
+                            </div>
+                            <input type="password" id="openaiKeyInput" class="key-input" placeholder="sk-...">
+                        </div>
                     </div>
+                    <div class="key-hint">Keys stay in your browser (saved locally).</div>
                 </div>
 
                 <!-- Quick asks -->
