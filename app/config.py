@@ -3,10 +3,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Check if running on Vercel or serverless environment
-if os.getenv("VERCEL") or os.getenv("SERVERLESS"):
-    CHROMA_PERSIST_DIR = "/tmp/chroma_db"
-    DOCS_DIR = "/tmp/data/sample_docs"
+# Render mounts persistent disks at /data — use that if available.
+# Falls back to local paths for development.
+if os.path.isdir("/data"):
+    CHROMA_PERSIST_DIR = "/data/chroma_db"
+    DOCS_DIR = "/data/sample_docs"
 else:
     CHROMA_PERSIST_DIR = os.path.join(os.path.dirname(__file__), "..", "chroma_db")
     DOCS_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "sample_docs")

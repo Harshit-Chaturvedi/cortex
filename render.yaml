@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: cortex
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: CORTEX_API_KEY
+        value: ""          # leave blank — users bring their own keys
+      - key: GROQ_API_KEY
+        value: ""
+      - key: GOOGLE_API_KEY
+        value: ""
+      - key: HF_TOKEN
+        value: ""
+      - key: OPENAI_API_KEY
+        value: ""
+    disk:
+      name: chroma-db
+      mountPath: /data/chroma_db
+      sizeGB: 1
