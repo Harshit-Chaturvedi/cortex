@@ -3,7 +3,7 @@ Retriever: connects to the persisted ChromaDB store and runs
 similarity search against the embedded chunks.
 """
 
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_chroma import Chroma
 
 from app.config import (
@@ -20,10 +20,8 @@ _embedding_fn = None
 def _get_embeddings():
     global _embedding_fn
     if _embedding_fn is None:
-        _embedding_fn = HuggingFaceEmbeddings(
-            model_name=EMBEDDING_MODEL,
-            model_kwargs={"device": "cpu"},
-        )
+        # FastEmbed uses ONNX — no PyTorch needed, fits in 512MB free tier RAM
+        _embedding_fn = FastEmbedEmbeddings(model_name=EMBEDDING_MODEL)
     return _embedding_fn
 
 

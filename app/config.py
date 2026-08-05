@@ -14,6 +14,10 @@ else:
 
 COLLECTION_NAME = "cortex_docs"
 
+# fastembed model — ONNX-based, no PyTorch, works in 512MB RAM
+# "sentence-transformers/all-MiniLM-L6-v2" is supported natively by fastembed
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+
 # Chunking params — these are character counts, not tokens.
 # Rule of thumb: 1 token ≈ 4 chars for English, so 1500 chars ≈ 375 tokens.
 # I originally wanted 500 tokens but bumped the char count up a bit

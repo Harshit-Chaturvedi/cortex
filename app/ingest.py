@@ -1,6 +1,6 @@
 """
 Ingestion pipeline: loads documents from data/sample_docs/,
-splits them into chunks, embeds with sentence-transformers,
+splits them into chunks, embeds with fastembed (ONNX — no PyTorch),
 and stores everything in ChromaDB.
 
 Run standalone:  python -m app.ingest
@@ -13,7 +13,7 @@ from pathlib import Path
 
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_chroma import Chroma
 
 from app.config import (
@@ -91,11 +91,8 @@ def chunk_documents(docs: list) -> list:
 
 
 def get_embedding_fn():
-    """Return the embedding function. Downloads model on first run (~80MB)."""
-    return HuggingFaceEmbeddings(
-        model_name=EMBEDDING_MODEL,
-        model_kwargs={"device": "cpu"},  # TODO: detect GPU if available
-    )
+    """Return the embedding function. Uses ONNX via fastembed — no PyTorch needed."""
+    return FastEmbedEmbeddings(model_name=EMBEDDING_MODEL)
 
 
 def store_chunks(chunks: list, embedding_fn) -> Chroma:
